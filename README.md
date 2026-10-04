@@ -139,7 +139,7 @@ The interface also displays the model evaluation metrics.
 heart-disease-prediction/
 │
 ├── app.py
-├── heart_disease_predic.ipynb
+├── heart_disease_analysis.ipynb
 ├── random_forest_model.pkl
 ├── scaler.pkl
 ├── requirements.txt
