@@ -1,0 +1,280 @@
+import streamlit as st
+import joblib
+import pandas as pd
+
+st.set_page_config(
+    page_title="Heart Disease Predictor",
+    page_icon="❤️",
+    layout="wide"
+)
+st.markdown("""
+<style>
+    .main {
+        background-color: #f7f9fc;
+    }
+
+    .block-container {
+        max-width: 1100px;
+        padding-top: 2rem;
+    }
+
+    .hero {
+        padding: 2rem;
+        border-radius: 20px;
+        background: linear-gradient(135deg, #111827, #1f2937);
+        color: white;
+        margin-bottom: 2rem;
+    }
+
+    .hero h1 {
+        margin-bottom: 0.3rem;
+    }
+
+    .metric-card {
+        background: white;
+        padding: 1.2rem;
+        border-radius: 16px;
+        border: 1px solid #e5e7eb;
+        text-align: center;
+    }
+
+    .footer {
+        margin-top: 3rem;
+        color: #6b7280;
+        font-size: 0.85rem;
+    }
+</style>
+""", unsafe_allow_html=True)
+
+model = joblib.load("random_forest_model.pkl")
+scaler = joblib.load("scaler.pkl")
+
+
+st.markdown("""
+<div class="hero">
+    <h1>❤️ Heart Disease Prediction</h1>
+    <p>
+        Machine learning demo using the UCI Heart Disease dataset
+        and a Random Forest classifier.
+    </p>
+</div>
+""", unsafe_allow_html=True)
+
+st.warning(
+    "Educational project only. This model is not a medical diagnosis tool."
+)
+
+st.write(
+    "Enter the patient information below to estimate the model's predicted risk."
+)
+
+
+st.subheader("Patient Information")
+
+col1, col2 = st.columns(2)
+
+with col1:
+    age = st.number_input(
+        "Age",
+        min_value=18,
+        max_value=100,
+        value=50
+    )
+
+    sex = st.selectbox(
+        "Sex",
+        options=[0, 1],
+        format_func=lambda x: "Female" if x == 0 else "Male"
+    )
+
+    cp = st.selectbox(
+        "Chest Pain Type",
+        options=[1, 2, 3, 4],
+        format_func=lambda x: {
+            1: "Typical angina",
+            2: "Atypical angina",
+            3: "Non-anginal pain",
+            4: "Asymptomatic"
+        }[x]
+    )
+
+    trestbps = st.number_input(
+        "Resting Blood Pressure (mm Hg)",
+        min_value=80,
+        max_value=220,
+        value=120
+    )
+
+    chol = st.number_input(
+        "Cholesterol (mg/dL)",
+        min_value=100,
+        max_value=600,
+        value=200
+    )
+
+    fbs = st.selectbox(
+        "Fasting Blood Sugar > 120 mg/dL",
+        options=[0, 1],
+        format_func=lambda x: "No" if x == 0 else "Yes"
+    )
+
+    restecg = st.selectbox(
+        "Resting ECG",
+        options=[0, 1, 2],
+        format_func=lambda x: {
+            0: "Normal",
+            1: "ST-T wave abnormality",
+            2: "Left ventricular hypertrophy"
+        }[x]
+    )
+
+
+with col2:
+    thalach = st.number_input(
+        "Maximum Heart Rate Achieved",
+        min_value=60,
+        max_value=220,
+        value=150
+    )
+
+    exang = st.selectbox(
+        "Exercise Induced Angina",
+        options=[0, 1],
+        format_func=lambda x: "No" if x == 0 else "Yes"
+    )
+
+    oldpeak = st.number_input(
+        "ST Depression (Oldpeak)",
+        min_value=0.0,
+        max_value=7.0,
+        value=1.0,
+        step=0.1
+    )
+
+    slope = st.selectbox(
+        "Slope of Peak Exercise ST Segment",
+        options=[1, 2, 3],
+        format_func=lambda x: {
+            1: "Upsloping",
+            2: "Flat",
+            3: "Downsloping"
+        }[x]
+    )
+
+    ca = st.selectbox(
+        "Number of Major Vessels",
+        options=[0, 1, 2, 3]
+    )
+
+    thal = st.selectbox(
+        "Thal",
+        options=[3, 6, 7],
+        format_func=lambda x: {
+            3: "Normal",
+            6: "Fixed defect",
+            7: "Reversible defect"
+        }[x]
+    )
+
+
+st.divider()
+
+if st.button("Predict Heart Disease", use_container_width=True):
+
+    patient_data = pd.DataFrame([[
+        age,
+        sex,
+        cp,
+        trestbps,
+        chol,
+        fbs,
+        restecg,
+        thalach,
+        exang,
+        oldpeak,
+        slope,
+        ca,
+        thal
+    ]], columns=[
+        "age",
+        "sex",
+        "cp",
+        "trestbps",
+        "chol",
+        "fbs",
+        "restecg",
+        "thalach",
+        "exang",
+        "oldpeak",
+        "slope",
+        "ca",
+        "thal"
+    ])
+
+    patient_scaled = scaler.transform(patient_data)
+
+    prediction = model.predict(patient_scaled)[0]
+    probability = model.predict_proba(patient_scaled)[0][1]
+
+    st.subheader("Prediction Result")
+
+    st.progress(float(probability))
+
+    st.metric(
+        label="Predicted Heart Disease Probability",
+        value=f"{probability:.1%}"
+    )
+
+    if prediction == 1:
+        st.error(
+            "Higher model-predicted likelihood of heart disease."
+        )
+    else:
+        st.success(
+            "Lower model-predicted likelihood of heart disease."
+        )
+
+    st.caption(
+        "This result is generated by a machine learning model and is not a medical diagnosis."
+    )
+
+
+st.divider()
+
+st.subheader("Model Performance")
+
+m1, m2, m3, m4 = st.columns(4)
+
+m1.metric("Accuracy", "88.5%")
+m2.metric("Precision", "81.8%")
+m3.metric("Recall", "96.4%")
+m4.metric("ROC-AUC", "95.1%")
+
+st.caption(
+    "Metrics are based on the held-out test split used during model development."
+)
+
+
+with st.expander("About this project"):
+    st.write("""
+    This project uses the UCI Heart Disease dataset.
+
+    The original target was converted into a binary classification problem:
+
+    - 0 = no heart disease
+    - 1 = heart disease present
+
+    Models tested:
+    - Logistic Regression
+    - Random Forest
+
+    Random Forest was selected for the final application because it achieved
+    slightly stronger recall and F1-score on the test set.
+    """)
+
+
+st.markdown("""
+<div class="footer">
+    Built with Python, scikit-learn and Streamlit. By Pablo Ignacio Cornejo Mantilla
+</div>
+""", unsafe_allow_html=True)
