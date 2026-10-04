@@ -14,6 +14,12 @@ The project includes:
 
 ---
 
+## Live Demo
+
+Try the deployed Streamlit app here:
+
+[Open the Heart Disease Prediction App](https://heart-disease-prediction-picm.streamlit.app)
+
 ## Project Overview
 
 The goal of this project is to build a machine learning model that predicts whether a patient is likely to have heart disease based on clinical features.
